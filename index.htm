@@ -60,17 +60,16 @@
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // fullscreen helper
     async function goFullscreen(elem) {
-      if (elem.requestFullscreen) await elem.requestFullscreen();
-      else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
-      else if (elem.msRequestFullscreen) await elem.msRequestFullscreen();
+      if (!document.fullscreenElement) {
+        if (elem.requestFullscreen) await elem.requestFullscreen();
+        else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
+        else if (elem.msRequestFullscreen) await elem.msRequestFullscreen();
+      }
     }
 
-    // draw video frames to canvas
     function draw() {
       if (!vid.paused && !vid.ended) {
-        // keep 16:9 aspect ratio
         const vidRatio = vid.videoWidth / vid.videoHeight;
         const canvasRatio = canvas.width / canvas.height;
         let drawWidth, drawHeight;
@@ -95,24 +94,21 @@
       canvas.style.display = 'block';
       vid.play();
 
-      // block pause/seek
+      // Keep video playing no matter what
       vid.addEventListener('pause', () => vid.play());
       vid.addEventListener('seeking', () => vid.currentTime = 0);
 
-      // hide right-click / keys
+      // Block keys / right-click
       document.addEventListener('keydown', e => e.preventDefault());
       document.addEventListener('contextmenu', e => e.preventDefault());
 
-      // fullscreen
-      goFullscreen(canvas);
-
-      // start drawing frames
+      // Start drawing frames
       requestAnimationFrame(draw);
     }
 
     overlay.addEventListener('click', startExperience);
 
-    // mobile double tap fullscreen toggle
+    // Double tap to toggle fullscreen freely
     let lastTap = 0;
     document.addEventListener('touchend', e => {
       const now = Date.now();
@@ -123,7 +119,12 @@
       lastTap = now;
     });
 
-    // resize canvas on window change
+    // Optional: click anywhere on desktop to toggle fullscreen
+    document.addEventListener('dblclick', () => {
+      if (!document.fullscreenElement) goFullscreen(canvas);
+      else document.exitFullscreen();
+    });
+
     window.addEventListener('resize', () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
