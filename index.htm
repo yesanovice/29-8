@@ -28,16 +28,16 @@
       cursor: pointer;
       z-index: 2;
       text-transform: lowercase;
+      transition: opacity 1s ease;
     }
 
-    /* keep video 16:9 and centered */
-    #bgvid {
+    #scene {
       position: fixed;
       top: 50%;
       left: 50%;
       width: 100%;
       height: 100%;
-      object-fit: contain; /* letterbox to preserve 16:9 */
+      object-fit: contain;   /* enforce 16:9 */
       transform: translate(-50%, -50%);
       background: black;
       z-index: 1;
@@ -49,13 +49,14 @@
 <body>
   <div id="overlay">press / click</div>
 
-  <video id="bgvid" preload="auto" playsinline>
+  <!-- Notice: no "controls", no "video player" look at all -->
+  <video id="scene" preload="auto" playsinline>
     <source src="yourvideo.mp4" type="video/mp4">
   </video>
 
   <script>
     const overlay = document.getElementById('overlay');
-    const vid = document.getElementById('bgvid');
+    const scene = document.getElementById('scene');
 
     async function goFullscreen(elem) {
       if (elem.requestFullscreen) {
@@ -68,41 +69,38 @@
     }
 
     function startExperience() {
-      overlay.remove();
-      vid.style.display = 'block';
+      overlay.style.opacity = '0'; // fade away text
+      setTimeout(() => overlay.remove(), 1000);
 
-      // Go fullscreen automatically
-      goFullscreen(vid);
+      scene.style.display = 'block';
+      goFullscreen(scene);
 
-      // Start video
-      vid.controls = false;
-      vid.play();
+      scene.muted = false;
+      scene.controls = false;
 
-      // Block pause/seek
-      vid.addEventListener('pause', () => vid.play());
-      vid.addEventListener('seeking', () => vid.currentTime = 0);
+      scene.play();
 
-      // Block right-click & key inputs
+      // Block pause / skip attempts
+      scene.addEventListener('pause', () => scene.play());
+      scene.addEventListener('seeking', () => scene.currentTime = 0);
+
+      // Kill right-click & key inputs
       document.addEventListener('keydown', e => e.preventDefault());
       document.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    // Single click works on desktop
     overlay.addEventListener('click', startExperience);
 
-    // Double tap support for mobile (enter/exit fullscreen)
+    // Double tap = toggle fullscreen
     let lastTap = 0;
-    overlay.addEventListener('touchend', e => {
+    document.addEventListener('touchend', e => {
       const now = Date.now();
       if (now - lastTap < 300) {
-        // double tap = toggle fullscreen
         if (!document.fullscreenElement) {
-          goFullscreen(vid);
+          goFullscreen(scene);
         } else {
           document.exitFullscreen();
         }
-      } else {
-        startExperience();
       }
       lastTap = now;
     });
