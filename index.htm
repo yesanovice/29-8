@@ -5,36 +5,47 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Watch</title>
   <style>
-    body, html {
+    html, body {
       margin: 0;
       padding: 0;
-      background: black;
       height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #b00;
-      font-family: 'Courier New', monospace;
-      font-size: 2rem;
-      cursor: pointer;
+      width: 100%;
+      background: black;
       overflow: hidden;
     }
     #overlay {
-      position: absolute;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      font-size: 2rem;
+      color: #b00;
+      background: black;
+      cursor: pointer;
       z-index: 10;
-      text-align: center;
     }
     video {
-      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
+      background: black;
+      z-index: 1;
+      pointer-events: none; /* no clicking on video */
     }
   </style>
 </head>
 <body>
   <div id="overlay">press / click</div>
-  <video id="theVideo" playsinline>
+
+  <video id="theVideo" playsinline preload="auto">
     <source src="yourvideo.mp4" type="video/mp4">
   </video>
 
@@ -45,8 +56,9 @@
     function startVideo() {
       overlay.style.display = 'none';
       video.style.display = 'block';
+      video.controls = false;
 
-      // request fullscreen
+      // fullscreen
       if (video.requestFullscreen) {
         video.requestFullscreen();
       } else if (video.webkitRequestFullscreen) {
@@ -55,17 +67,16 @@
         video.msRequestFullscreen();
       }
 
-      // disable controls
-      video.controls = false;
-
-      // play
+      // start playing
       video.play();
 
-      // disable context menu + keyboard pause/seek attempts
-      document.addEventListener('keydown', e => {
-        e.preventDefault();
-      });
-      video.addEventListener('contextmenu', e => e.preventDefault());
+      // block any pause/seek attempts
+      video.addEventListener('pause', () => video.play());
+      video.addEventListener('seeking', () => video.currentTime = 0);
+
+      // block keyboard/mouse tricks
+      document.addEventListener('keydown', e => e.preventDefault());
+      document.addEventListener('contextmenu', e => e.preventDefault());
     }
 
     overlay.addEventListener('click', startVideo);
