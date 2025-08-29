@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Watch</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #b00;
+      font-family: 'Courier New', monospace;
+      font-size: 2rem;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    #overlay {
+      position: absolute;
+      z-index: 10;
+      text-align: center;
+    }
+    video {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div id="overlay">press / click</div>
+  <video id="theVideo" playsinline>
+    <source src="yourvideo.mp4" type="video/mp4">
+  </video>
+
+  <script>
+    const overlay = document.getElementById('overlay');
+    const video = document.getElementById('theVideo');
+
+    function startVideo() {
+      overlay.style.display = 'none';
+      video.style.display = 'block';
+
+      // request fullscreen
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+      }
+
+      // disable controls
+      video.controls = false;
+
+      // play
+      video.play();
+
+      // disable context menu + keyboard pause/seek attempts
+      document.addEventListener('keydown', e => {
+        e.preventDefault();
+      });
+      video.addEventListener('contextmenu', e => e.preventDefault());
+    }
+
+    overlay.addEventListener('click', startVideo);
+    overlay.addEventListener('touchstart', startVideo);
+  </script>
+</body>
+</html>
