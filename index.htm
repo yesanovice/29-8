@@ -3,22 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Watch</title>
+  <title>Respira</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
       width: 100%;
-      background: black;
       overflow: hidden;
+      background: black;
     }
     #overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      height: 100%;
-      width: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -27,60 +25,53 @@
       color: #b00;
       background: black;
       cursor: pointer;
-      z-index: 10;
+      z-index: 2;
     }
     video {
       position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
       object-fit: cover;
       background: black;
       z-index: 1;
-      pointer-events: none; /* no clicking on video */
+      pointer-events: none;  /* make it feel like background, not a player */
     }
   </style>
 </head>
 <body>
   <div id="overlay">press / click</div>
 
-  <video id="theVideo" playsinline preload="auto">
+  <video id="bgvid" preload="auto" playsinline>
     <source src="yourvideo.mp4" type="video/mp4">
   </video>
 
   <script>
     const overlay = document.getElementById('overlay');
-    const video = document.getElementById('theVideo');
+    const vid = document.getElementById('bgvid');
 
-    function startVideo() {
-      overlay.style.display = 'none';
-      video.style.display = 'block';
-      video.controls = false;
+    function startExperience() {
+      overlay.remove(); // get rid of the intro text
+      vid.style.display = 'block';
 
-      // fullscreen
-      if (video.requestFullscreen) {
-        video.requestFullscreen();
-      } else if (video.webkitRequestFullscreen) {
-        video.webkitRequestFullscreen();
-      } else if (video.msRequestFullscreen) {
-        video.msRequestFullscreen();
-      }
+      // Play immediately
+      vid.play();
 
-      // start playing
-      video.play();
+      // Kill controls
+      vid.controls = false;
 
-      // block any pause/seek attempts
-      video.addEventListener('pause', () => video.play());
-      video.addEventListener('seeking', () => video.currentTime = 0);
+      // If user tries to pause → force play again
+      vid.addEventListener('pause', () => vid.play());
 
-      // block keyboard/mouse tricks
+      // If user tries to seek → snap back
+      vid.addEventListener('seeking', () => vid.currentTime = 0);
+
+      // Kill right-click + keyboard shenanigans
       document.addEventListener('keydown', e => e.preventDefault());
       document.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    overlay.addEventListener('click', startVideo);
-    overlay.addEventListener('touchstart', startVideo);
+    overlay.addEventListener('click', startExperience);
+    overlay.addEventListener('touchstart', startExperience);
   </script>
 </body>
 </html>
