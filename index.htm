@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Respira</title>
+  <title>The Watch</title>
   <style>
     html, body {
       margin: 0;
@@ -13,6 +13,7 @@
       overflow: hidden;
       background: black;
     }
+
     #overlay {
       position: fixed;
       top: 0; left: 0;
@@ -26,15 +27,22 @@
       background: black;
       cursor: pointer;
       z-index: 2;
+      text-transform: lowercase;
     }
-    video {
+
+    /* keep video 16:9 and centered */
+    #bgvid {
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      object-fit: contain; /* letterbox to preserve 16:9 */
+      transform: translate(-50%, -50%);
       background: black;
       z-index: 1;
-      pointer-events: none;  /* make it feel like background, not a player */
+      pointer-events: none;
+      display: none;
     }
   </style>
 </head>
@@ -49,29 +57,55 @@
     const overlay = document.getElementById('overlay');
     const vid = document.getElementById('bgvid');
 
+    async function goFullscreen(elem) {
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        await elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        await elem.msRequestFullscreen();
+      }
+    }
+
     function startExperience() {
-      overlay.remove(); // get rid of the intro text
+      overlay.remove();
       vid.style.display = 'block';
 
-      // Play immediately
+      // Go fullscreen automatically
+      goFullscreen(vid);
+
+      // Start video
+      vid.controls = false;
       vid.play();
 
-      // Kill controls
-      vid.controls = false;
-
-      // If user tries to pause → force play again
+      // Block pause/seek
       vid.addEventListener('pause', () => vid.play());
-
-      // If user tries to seek → snap back
       vid.addEventListener('seeking', () => vid.currentTime = 0);
 
-      // Kill right-click + keyboard shenanigans
+      // Block right-click & key inputs
       document.addEventListener('keydown', e => e.preventDefault());
       document.addEventListener('contextmenu', e => e.preventDefault());
     }
 
+    // Single click works on desktop
     overlay.addEventListener('click', startExperience);
-    overlay.addEventListener('touchstart', startExperience);
+
+    // Double tap support for mobile (enter/exit fullscreen)
+    let lastTap = 0;
+    overlay.addEventListener('touchend', e => {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        // double tap = toggle fullscreen
+        if (!document.fullscreenElement) {
+          goFullscreen(vid);
+        } else {
+          document.exitFullscreen();
+        }
+      } else {
+        startExperience();
+      }
+      lastTap = now;
+    });
   </script>
 </body>
 </html>
