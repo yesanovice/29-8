@@ -31,78 +31,102 @@
       transition: opacity 1s ease;
     }
 
-    #scene {
+    canvas {
       position: fixed;
       top: 50%;
       left: 50%;
+      transform: translate(-50%, -50%);
+      object-fit: contain; /* maintain 16:9 */
+      z-index: 1;
       width: 100%;
       height: 100%;
-      object-fit: contain;   /* enforce 16:9 */
-      transform: translate(-50%, -50%);
-      background: black;
-      z-index: 1;
       pointer-events: none;
+      background: black;
       display: none;
     }
   </style>
 </head>
 <body>
   <div id="overlay">press / click</div>
-
-  <!-- Notice: no "controls", no "video player" look at all -->
-  <video id="scene" preload="auto" playsinline>
-    <source src="yourvideo.mp4" type="video/mp4">
-  </video>
+  <canvas id="scene"></canvas>
+  <video id="hiddenVid" src="yourvideo.mp4" preload="auto" playsinline style="display:none"></video>
 
   <script>
     const overlay = document.getElementById('overlay');
-    const scene = document.getElementById('scene');
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+    const vid = document.getElementById('hiddenVid');
 
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // fullscreen helper
     async function goFullscreen(elem) {
-      if (elem.requestFullscreen) {
-        await elem.requestFullscreen();
-      } else if (elem.webkitRequestFullscreen) {
-        await elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        await elem.msRequestFullscreen();
+      if (elem.requestFullscreen) await elem.requestFullscreen();
+      else if (elem.webkitRequestFullscreen) await elem.webkitRequestFullscreen();
+      else if (elem.msRequestFullscreen) await elem.msRequestFullscreen();
+    }
+
+    // draw video frames to canvas
+    function draw() {
+      if (!vid.paused && !vid.ended) {
+        // keep 16:9 aspect ratio
+        const vidRatio = vid.videoWidth / vid.videoHeight;
+        const canvasRatio = canvas.width / canvas.height;
+        let drawWidth, drawHeight;
+        if (canvasRatio > vidRatio) {
+          drawHeight = canvas.height;
+          drawWidth = drawHeight * vidRatio;
+        } else {
+          drawWidth = canvas.width;
+          drawHeight = drawWidth / vidRatio;
+        }
+        const x = (canvas.width - drawWidth)/2;
+        const y = (canvas.height - drawHeight)/2;
+        ctx.drawImage(vid, x, y, drawWidth, drawHeight);
+        requestAnimationFrame(draw);
       }
     }
 
     function startExperience() {
-      overlay.style.opacity = '0'; // fade away text
+      overlay.style.opacity = '0';
       setTimeout(() => overlay.remove(), 1000);
 
-      scene.style.display = 'block';
-      goFullscreen(scene);
+      canvas.style.display = 'block';
+      vid.play();
 
-      scene.muted = false;
-      scene.controls = false;
+      // block pause/seek
+      vid.addEventListener('pause', () => vid.play());
+      vid.addEventListener('seeking', () => vid.currentTime = 0);
 
-      scene.play();
-
-      // Block pause / skip attempts
-      scene.addEventListener('pause', () => scene.play());
-      scene.addEventListener('seeking', () => scene.currentTime = 0);
-
-      // Kill right-click & key inputs
+      // hide right-click / keys
       document.addEventListener('keydown', e => e.preventDefault());
       document.addEventListener('contextmenu', e => e.preventDefault());
+
+      // fullscreen
+      goFullscreen(canvas);
+
+      // start drawing frames
+      requestAnimationFrame(draw);
     }
 
     overlay.addEventListener('click', startExperience);
 
-    // Double tap = toggle fullscreen
+    // mobile double tap fullscreen toggle
     let lastTap = 0;
     document.addEventListener('touchend', e => {
       const now = Date.now();
       if (now - lastTap < 300) {
-        if (!document.fullscreenElement) {
-          goFullscreen(scene);
-        } else {
-          document.exitFullscreen();
-        }
+        if (!document.fullscreenElement) goFullscreen(canvas);
+        else document.exitFullscreen();
       }
       lastTap = now;
+    });
+
+    // resize canvas on window change
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     });
   </script>
 </body>
